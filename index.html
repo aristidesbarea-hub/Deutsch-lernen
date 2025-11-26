@@ -3,27 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Juego de Vocabulario Alemán (Escritura de Tiempos)</title>
+    <title>Juego de Vocabulario Alemán (Repetición Espaciada)</title>
     <style>
-        /* Estilos CSS basados en la versión anterior */
+        /* Estilos CSS - Modificados para incluir panel lateral */
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
-            align-items: center;
             min-height: 100vh;
             background-color: #f4f4f9;
             margin: 0;
             padding: 20px;
+        }
+        .main-content {
+            display: flex;
+            width: 100%;
+            max-width: 1400px; /* Ancho total */
+            margin: 0 auto;
         }
         .game-container {
             background: white;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            width: 90%;
-            max-width: 800px;
+            width: 65%; /* Ocupa 2/3 del espacio */
             text-align: center;
+            margin-right: 20px;
+        }
+        .progress-panel {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 35%; /* Ocupa 1/3 del espacio */
+            overflow-y: auto; /* Scroll si hay muchas palabras */
+            max-height: 90vh;
         }
         h2 {
             color: #0056b3;
@@ -48,32 +61,16 @@
             gap: 15px;
             margin-bottom: 20px;
         }
-        .options-container {
-            grid-template-columns: 1fr 1fr;
-        }
-        .input-container {
-            grid-template-columns: 1fr;
-            text-align: left;
-        }
+        .options-container { grid-template-columns: 1fr 1fr; }
+        .input-container { grid-template-columns: 1fr; text-align: left; }
         .input-group {
             padding: 15px;
             border: 1px solid #ced4da;
             border-radius: 8px;
             background-color: #f8f9fa;
         }
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #495057;
-        }
-        .input-group input {
-            width: calc(100% - 10px);
-            padding: 8px;
-            font-size: 1.1em;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-        }
+        .input-group label { display: block; margin-bottom: 5px; font-weight: bold; color: #495057; }
+        .input-group input { width: calc(100% - 10px); padding: 8px; font-size: 1.1em; border: 1px solid #ced4da; border-radius: 4px; }
         .option-button {
             padding: 15px 20px;
             font-size: 1.1em;
@@ -86,13 +83,8 @@
             text-align: center;
             word-wrap: break-word;
         }
-        .option-button:hover:not([disabled]) {
-            background-color: #cce0ff;
-        }
-        .option-button[disabled] {
-            cursor: default;
-            opacity: 0.8;
-        }
+        .option-button:hover:not([disabled]) { background-color: #cce0ff; }
+        .option-button[disabled] { cursor: default; opacity: 0.8; }
         .correct { background-color: #28a745 !important; color: white !important; border-color: #28a745 !important; }
         .incorrect { background-color: #dc3545 !important; color: white !important; border-color: #dc3545 !important; }
         .input-feedback { font-size: 0.9em; margin-top: 5px; min-height: 1.2em; }
@@ -105,7 +97,7 @@
             font-weight: bold;
             min-height: 30px;
         }
-        #next-button {
+        #next-button, #check-button {
             background-color: #007bff;
             color: white;
             border: none;
@@ -115,285 +107,331 @@
             cursor: pointer;
             transition: background-color 0.2s;
         }
-        #next-button:hover { background-color: #0056b3; }
+        #next-button:hover, #check-button:hover { background-color: #0056b3; }
         .hidden { display: none; }
+
+        /* Estilos del Panel de Progreso */
+        .progress-panel h3 {
+            color: #495057;
+            margin-top: 0;
+            border-bottom: 1px solid #adb5bd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .learned-list {
+            list-style: none;
+            padding: 0;
+            text-align: left;
+        }
+        .learned-item {
+            border-left: 5px solid #28a745;
+            background-color: #e2f0e6;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .learned-item strong {
+            display: block;
+            font-size: 1.1em;
+            color: #155724;
+            margin-bottom: 5px;
+        }
+        .learned-item span {
+            display: block;
+        }
+
+        .repetition-info {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
-    <div class="game-container">
-        <h2>🇩🇪 Tu Entrenador de Vocabulario Alemán 🇩🇪</h2>
-        
-        <p id="current-step-title">Paso 1 de 3: Significado</p>
-        <p id="question-text">Cargando...</p>
-        
-        <div id="options-container" class="options-container">
+    <div class="main-content">
+        <div class="game-container">
+            <h2>🇩🇪 Tu Entrenador de Vocabulario Alemán 🇩🇪</h2>
+            
+            <p id="current-step-title">Paso 1 de 3: Significado</p>
+            <div id="repetition-status" class="repetition-info"></div>
+            <p id="question-text">Cargando...</p>
+            
+            <div id="options-container" class="options-container">
+                </div>
+
+            <div id="input-container" class="input-container hidden">
+                <div class="input-group">
+                    <label for="prateritum-input">Escribe el Präteritum:</label>
+                    <input type="text" id="prateritum-input" placeholder="Ej: fuhr ...ab">
+                    <div id="prateritum-feedback" class="input-feedback"></div>
+                </div>
+                <div class="input-group">
+                    <label for="perfekt-input">Escribe el Perfekt:</label>
+                    <input type="text" id="perfekt-input" placeholder="Ej: ist abgefahren">
+                    <div id="perfekt-feedback" class="input-feedback"></div>
+                </div>
             </div>
 
-        <div id="input-container" class="input-container hidden">
-            <div class="input-group">
-                <label for="prateritum-input">Escribe el Präteritum:</label>
-                <input type="text" id="prateritum-input" placeholder="Ej: fuhr ...ab" disabled>
-                <div id="prateritum-feedback" class="input-feedback"></div>
-            </div>
-            <div class="input-group">
-                <label for="perfekt-input">Escribe el Perfekt:</label>
-                <input type="text" id="perfekt-input" placeholder="Ej: ist abgefahren" disabled>
-                <div id="perfekt-feedback" class="input-feedback"></div>
-            </div>
+            <div id="feedback-overall"></div>
+            <button id="check-button" class="hidden" style="margin-top: 20px;">Comprobar</button>
+            <button id="next-button" class="hidden" style="margin-top: 20px;">Siguiente Palabra</button>
         </div>
 
-        <div id="feedback-overall"></div>
-        <button id="check-button" class="hidden" style="margin-top: 20px;">Comprobar</button>
-        <button id="next-button" class="hidden" style="margin-top: 20px;">Siguiente Palabra</button>
+        <div class="progress-panel">
+            <h3>✅ Palabras Aprendidas (<span id="learned-count">0</span>/<span id="total-count">0</span>)</h3>
+            <ul id="learned-words-list" class="learned-list">
+                <li>Aún no has completado ninguna palabra. ¡Empieza!</li>
+            </ul>
+        </div>
     </div>
 
     <script>
         // ** TU BANCO DE VOCABULARIO COMPLETO **
-        // Array generado a partir de la tabla proporcionada.
         const vocabulary = [
-            { word: "abfahren (fährt ...ab)", prateritum: "fuhr ...ab", perfekt: "ist abgefahren", meaning: "partir, salir" },
-            { word: "abfliegen", prateritum: "flog ...ab", perfekt: "ist abgeflogen", meaning: "partir en avión" },
-            { word: "anfangen (fängt ...an)", prateritum: "fing ...an", perfekt: "hat angefangen", meaning: "empezar" },
-            { word: "anbieten", prateritum: "bot ...an", perfekt: "hat angeboten", meaning: "ofrecer" },
-            { word: "ankommen", prateritum: "kam ...an", perfekt: "ist angekommen", meaning: "llegar" },
-            { word: "anrufen", prateritum: "rief ...an", perfekt: "hat angerufen", meaning: "llamar por teléfono" },
-            { word: "anschauen", prateritum: "schaute ...an", perfekt: "hat angeschaut", meaning: "mirar" },
-            { word: "antworten", prateritum: "antwortete", perfekt: "hat geantwortet", meaning: "contestar" },
-            { word: "anziehen", prateritum: "zog ...an", perfekt: "hat angezogen", meaning: "vestirse, ponerse algo" },
-            { word: "arbeiten", prateritum: "arbeitete", perfekt: "hat gearbeitet", meaning: "trabajar" },
-            { word: "aufhören", prateritum: "hörte ...auf", perfekt: "hat aufgehört", meaning: "terminar, dejar" },
-            { word: "aufmachen", prateritum: "machte ...auf", perfekt: "hat aufgemacht", meaning: "abrir" },
-            { word: "aufstehen", prateritum: "stand ...auf", perfekt: "ist aufgestanden", meaning: "levantarse" },
-            { word: "ausfüllen", prateritum: "füllte ...aus", perfekt: "hat ausgefüllt", meaning: "rellenar (un formulario)" },
-            { word: "ausgehen", prateritum: "ging ...aus", perfekt: "ist ausgegangen", meaning: "salir de casa por la noche a divertirse" },
-            { word: "aussteigen", prateritum: "stieg ...aus", perfekt: "ist ausgestiegen", meaning: "apearse (bajar del transporte)" },
-            { word: "ausziehen (quitarse)", prateritum: "zog ...aus", perfekt: "hat ausgezogen", meaning: "quitarse la ropa" },
-            { word: "ausziehen (mudarse)", prateritum: "zog ...aus", perfekt: "ist ausgezogen", meaning: "mudarse de vivienda" },
-            { word: "backen (bäckt)", prateritum: "buk", perfekt: "hat gebacken", meaning: "preparar algo al horno" },
-            { word: "baden", prateritum: "badete", perfekt: "hat gebadet", meaning: "bañarse" },
-            { word: "bauen", prateritum: "baute", perfekt: "hat gebaut", meaning: "construir" },
-            { word: "befehlen (befiehlt)", prateritum: "befahl", perfekt: "hat befohlen", meaning: "dar ordenes" },
-            { word: "beginnen", prateritum: "begann", perfekt: "hat begonnen", meaning: "comenzar" },
-            { word: "begleiten", prateritum: "begleitete", perfekt: "hat begleitet", meaning: "acompañar" },
-            { word: "beißen", prateritum: "biss", perfekt: "hat gebissen", meaning: "morder" },
-            { word: "bekommen", prateritum: "bekam", perfekt: "hat bekommen", meaning: "recibir" },
-            { word: "besichtigen", prateritum: "besichtigte", perfekt: "hat besichtigt", meaning: "visitar un museo, ciudad.." },
-            { word: "bestellen", prateritum: "bestellte", perfekt: "hat bestellt", meaning: "reservar, encargar" },
-            { word: "besuchen", prateritum: "besuchte", perfekt: "hat besucht", meaning: "visitar, asistir a.." },
-            { word: "beten", prateritum: "betete", perfekt: "hat gebetet", meaning: "rezar" },
-            { word: "bewegen", prateritum: "bewegte", perfekt: "hat bewegt", meaning: "mover" },
-            { word: "beweisen", prateritum: "bewies", perfekt: "hat bewiesen", meaning: "probar, demostrar" },
-            { word: "bewerben (bewirbt)", prateritum: "bewarb", perfekt: "hat beworben", meaning: "solicitar (trabajo, beca)" },
-            { word: "bezahlen", prateritum: "bezahlte", perfekt: "hat bezahlt", meaning: "pagar" },
-            { word: "biegen", prateritum: "bog", perfekt: "hat/ist gebogen", meaning: "doblar, torcer" },
-            { word: "bieten", prateritum: "bot", perfekt: "hat geboten", meaning: "ofrecer" },
-            { word: "binden", prateritum: "band", perfekt: "hat gebunden", meaning: "atar, unir" },
-            { word: "bitten", prateritum: "bat", perfekt: "hat gebeten", meaning: "ofrecer" },
-            { word: "bleiben", prateritum: "blieb", perfekt: "ist geblieben", meaning: "Permanecer, quedarse" },
-            { word: "brauchen", prateritum: "brauchte", perfekt: "hat gebraucht", meaning: "necesitar" },
-            { word: "braten (brät)", prateritum: "briet", perfekt: "hat gebraten", meaning: "freir, asar" },
-            { word: "brechen", prateritum: "brach", perfekt: "hat/ist gebrochen", meaning: "quebrar, romper" },
-            { word: "brennen", prateritum: "brannte", perfekt: "hat gebrannt", meaning: "quemar, arder" },
-            { word: "bringen", prateritum: "brachte", perfekt: "hat gebracht", meaning: "traer, llevar" },
-            { word: "buchen", prateritum: "buchte", perfekt: "hat gebucht", meaning: "reservar" },
-            { word: "buchstabieren", prateritum: "buchstabierte", perfekt: "hat buchstabiert", meaning: "deletrear" },
-            { word: "danken", prateritum: "dankte", perfekt: "hat gedankt", meaning: "agradecer" },
-            { word: "dauern", prateritum: "dauerte", perfekt: "hat gedauert", meaning: "durar" },
-            { word: "denken", prateritum: "dachte", perfekt: "hat gedacht", meaning: "pensar" },
-            { word: "diskutieren", prateritum: "diskutierte", perfekt: "hat diskutiert", meaning: "discutir" },
-            { word: "dürfen (darf)", prateritum: "durfte", perfekt: "hat gedurft", meaning: "poder, no está prohibido" },
-            { word: "duschen", prateritum: "duschte", perfekt: "hat geduscht", meaning: "tomar una ducha" },
-            { word: "einkaufen", prateritum: "kaufte ... ein", perfekt: "hat eingekauft", meaning: "hacer compras" },
-            { word: "einladen (lädt ... ein)", prateritum: "lud ... ein", perfekt: "hat eingeladen", meaning: "invitar" },
-            { word: "einsteigen", prateritum: "stieg... ein", perfekt: "ist eingestiegen", meaning: "subir al coche..." },
-            { word: "empfangen (empfängt)", prateritum: "empfing", perfekt: "hat empfangen", meaning: "recibir (personas, o mensajes)" },
-            { word: "empfehlen (empfiehlt)", prateritum: "empfahl", perfekt: "hat empfohlen", meaning: "recomendar" },
-            { word: "entschuldigen", prateritum: "entschuldigte", perfekt: "hat entschuldigt", meaning: "disculpar" },
-            { word: "erfüllen", prateritum: "erfüllte", perfekt: "har erfüllt", meaning: "satisfacer un deseo o condiciones" },
-            { word: "sich erholen", prateritum: "erholte sich", perfekt: "hat sich erholt", meaning: "recuperarse" },
-            { word: "erreichen", prateritum: "erreichte", perfekt: "hat erreicht", meaning: "alcanzar" },
-            { word: "erschrecken (transitivo - asustar)", prateritum: "erschreckte", perfekt: "hat erschreckt", meaning: "asustar" },
-            { word: "erschrecken (intransitivo - asustarse)", prateritum: "erschrak", perfekt: "ist erschrocken", meaning: "asustarse" },
-            { word: "erzählen", prateritum: "erzählte", perfekt: "hat erzählt", meaning: "narrar" },
-            { word: "essen", prateritum: "aß", perfekt: "hat gegessen", meaning: "comer" },
-            { word: "fahren (fährt)", prateritum: "fuhr", perfekt: "ist gefahren", meaning: "ir en coche, tren.." },
-            { word: "fallen (fällt)", prateritum: "fiel", perfekt: "ist gefallen", meaning: "caer" },
-            { word: "fernsehen (sieht...fern)", prateritum: "sah ...fern", perfekt: "hat ferngesehen", meaning: "mirar la tv" },
-            { word: "finden", prateritum: "fand", perfekt: "hat gefunden", meaning: "encontrar" },
-            { word: "fliegen", prateritum: "flog", perfekt: "hat /ist geflogen", meaning: "volar" },
-            { word: "fliehen", prateritum: "floh", perfekt: "ist geflohen", meaning: "huir" },
-            { word: "fließen", prateritum: "floss", perfekt: "ist geflossen", meaning: "fluir" },
-            { word: "fragen", prateritum: "fragte", perfekt: "hat gefragt", meaning: "preguntar" },
-            { word: "fressen (frisst)", prateritum: "fraß", perfekt: "hat gefressen", meaning: "devorar, comer (de animales)" },
-            { word: "sich freuen", prateritum: "freute sich", perfekt: "hat sich gefreut", meaning: "alegrarse" },
-            { word: "frieren", prateritum: "fror", perfekt: "hat/ist gefrogen", meaning: "helarse, congelarse" },
-            { word: "frühstücken", prateritum: "früstückte", perfekt: "hat gefrühstuckt", meaning: "desayunar" },
-            { word: "fühlen", prateritum: "fühlte", perfekt: "hat gefühlt", meaning: "sentir" },
-            { word: "geben (gibt)", prateritum: "gab", perfekt: "hat gegeben", meaning: "dar" },
-            { word: "gefallen (gefällt)", prateritum: "gefiel", perfekt: "hat gefallen", meaning: "gustar" },
-            { word: "gehen", prateritum: "ging", perfekt: "ist gegangen", meaning: "ir" },
-            { word: "gehören", prateritum: "gehörte", perfekt: "hat gehört", meaning: "pertenecer" },
-            { word: "gelingen", prateritum: "gelang", perfekt: "ist gelungen", meaning: "resultar, salir bien" },
-            { word: "gelten (gilt)", prateritum: "galt", perfekt: "hat gegolten", meaning: "valer, ser válido" },
-            { word: "genießen", prateritum: "genoss", perfekt: "hat genossen", meaning: "disfrutar" },
-            { word: "geschehen (geschieht)", prateritum: "geschah", perfekt: "ist geschehen", meaning: "suceder - sólo 3a sing" },
-            { word: "gewinnen", prateritum: "gewann", perfekt: "hat gewonnen", meaning: "ganar" },
-            { word: "gießen", prateritum: "goss", perfekt: "hat gegossen", meaning: "regar" },
-            { word: "glauben", prateritum: "glaubte", perfekt: "hat geblaut", meaning: "creer" },
-            { word: "graben (gräbt)", prateritum: "grub", perfekt: "hat gegraben", meaning: "cavar" },
-            { word: "grüßen", prateritum: "grüßte", perfekt: "hat gegrüßt", meaning: "saludar" },
-            { word: "gucken", prateritum: "guckte", perfekt: "hat geguckt", meaning: "mirar" },
-            { word: "haben (hat)", prateritum: "hatte", perfekt: "hat gehabt", meaning: "tener" },
-            { word: "halten (hält)", prateritum: "hielt", perfekt: "hat gehalten", meaning: "parar, sostener" },
-            { word: "hängen (transitivo - colgar)", prateritum: "hängte", perfekt: "hat gehängt", meaning: "colgar" },
-            { word: "hängen (intransitivo - estar colgado)", prateritum: "hing", perfekt: "hat, ist gehangen", meaning: "estar colgado" },
-            { word: "heben", prateritum: "hob", perfekt: "hat gehoben", meaning: "alzar, levantar" },
-            { word: "heiraten", prateritum: "heiratete", perfekt: "hat geheiratet", meaning: "casarse" },
-            { word: "heißen", prateritum: "hieß", perfekt: "hat geheißen", meaning: "llamarse" },
-            { word: "helfen", prateritum: "half", perfekt: "hat geholfen", meaning: "ayudar" },
-            { word: "holen", prateritum: "holte", perfekt: "hat geholt", meaning: "ir a buscar" },
-            { word: "hören", prateritum: "hörte", perfekt: "hat gehört", meaning: "oir" },
-            { word: "sich interessieren", prateritum: "interessierte sich", perfekt: "hat sich interessiert", meaning: "interesarse" },
-            { word: "kaufen", prateritum: "kaufte", perfekt: "hat gekauft", meaning: "comprar" },
-            { word: "kennen", prateritum: "kannte", perfekt: "hat gekannt", meaning: "conocer" },
-            { word: "klingeln", prateritum: "klingelte", perfekt: "hat geklingelt", meaning: "tocar o sonar un timbre" },
-            { word: "klingen", prateritum: "klang", perfekt: "hat geklungen", meaning: "sonar" },
-            { word: "kochen", prateritum: "kochte", perfekt: "hat gekocht", meaning: "cocinar, servir" },
-            { word: "kommen", prateritum: "kam", perfekt: "ist gekommen", meaning: "venir" },
-            { word: "können (kann)", prateritum: "konnte", perfekt: "hat gekonnt", meaning: "poder, saber" },
-            { word: "kosten", prateritum: "kostete", perfekt: "hat gekostet", meaning: "costar" },
-            { word: "küssen", prateritum: "küsste", perfekt: "hat geküsst", meaning: "besar" },
-            { word: "lachen", prateritum: "lachte", perfekt: "hat gelacht", meaning: "reír" },
-            { word: "laden (lädt)", prateritum: "lud", perfekt: "hat geladen", meaning: "cargar (mercancía)" },
-            { word: "landen", prateritum: "landete", perfekt: "ist gelandet", meaning: "aterrizar" },
-            { word: "lassen (lässt)", prateritum: "ließ", perfekt: "hat gelassen", meaning: "dejar, permitir" },
-            { word: "laufen (läuft)", prateritum: "lief", perfekt: "ist gelaufen", meaning: "correr" },
-            { word: "leben", prateritum: "lebte", perfekt: "hat gelebt", meaning: "vivir" },
-            { word: "legen", prateritum: "legte", perfekt: "hat gelegt", meaning: "colocar" },
-            { word: "leiden", prateritum: "litt", perfekt: "hat gelitten", meaning: "sufrir" },
-            { word: "leihen", prateritum: "lieh", perfekt: "hat geliehen", meaning: "prestar" },
-            { word: "lernen", prateritum: "lernte", perfekt: "hat gelernt", meaning: "aprender" },
-            { word: "lesen (liest)", prateritum: "las", perfekt: "hat gelesen", meaning: "leer" },
-            { word: "lieben", prateritum: "liebte", perfekt: "hat geliebt", meaning: "amar" },
-            { word: "liegen (estar extendido)", prateritum: "lag", perfekt: "hat, ist gelegen", meaning: "estar extendido, yacer" },
-            { word: "lügen", prateritum: "log", perfekt: "hat gelogen", meaning: "mentir" },
-            { word: "machen", prateritum: "machte", perfekt: "hat gemacht", meaning: "hacer" },
-            { word: "meinen", prateritum: "meinte", perfekt: "hat gemeint", meaning: "opinar" },
-            { word: "messen (misst)", prateritum: "maß", perfekt: "hat gemessen", meaning: "medir" },
-            { word: "mögen (mag)", prateritum: "mochte", perfekt: "hat gemocht", meaning: "gustar, querer" },
-            { word: "müssen (muss)", prateritum: "musste", perfekt: "hat gemusst", meaning: "tener que" },
-            { word: "nehmen (nimmt)", prateritum: "nahm", perfekt: "hat genommen", meaning: "tomar, coger" },
-            { word: "nennen", prateritum: "nannte", perfekt: "hat genannt", meaning: "nombrar, llamar" },
-            { word: "öffnen", prateritum: "öffnete", perfekt: "hat geöffnet", meaning: "abrir" },
-            { word: "packen", prateritum: "packte", perfekt: "hat gepackt", meaning: "empaquetar" },
-            { word: "parken", prateritum: "parkte", perfekt: "hat geparkt", meaning: "aparcar" },
-            { word: "passen", prateritum: "passte", perfekt: "hat gepasst", meaning: "venir bien, combinar" },
-            { word: "pfeifen", prateritum: "pfiff", perfekt: "hat gepfiffen", meaning: "silbar" },
-            { word: "putzen", prateritum: "putzte", perfekt: "hat geputzt", meaning: "limpiar" },
-            { word: "raten (rät)", prateritum: "riet", perfekt: "hat geraten", meaning: "aconsejar, adivinar" },
-            { word: "rauchen", prateritum: "rauchte", perfekt: "hat geraucht", meaning: "fumar" },
-            { word: "reden", prateritum: "redete", perfekt: "hat geredet", meaning: "charlar" },
-            { word: "regnen (es regnet)", prateritum: "es regnete", perfekt: "es hat geregnet", meaning: "llover" },
-            { word: "reisen", prateritum: "reiste", perfekt: "ist gereist", meaning: "viajar" },
-            { word: "reiten", prateritum: "ritt", perfekt: "hat / ist geritten", meaning: "cabalgar" },
-            { word: "rennen", prateritum: "rannte", perfekt: "ist gerannt", meaning: "correr rápido" },
-            { word: "reparieren", prateritum: "reparierte", perfekt: "hat repariert", meaning: "reparar" },
-            { word: "riechen", prateritum: "roch", perfekt: "hat gerochen", meaning: "oler" },
-            { word: "rufen", prateritum: "rief", perfekt: "hat gerufen", meaning: "llamar" },
-            { word: "sagen", prateritum: "sagte", perfekt: "hat gesagt", meaning: "decir" },
-            { word: "saufen (säuft)", prateritum: "soff", perfekt: "hat gesoffen", meaning: "beber mucho alcohol" },
-            { word: "schaffen (lograr)", prateritum: "schaffte", perfekt: "hat geschafft", meaning: "conseguir, lograr" },
-            { word: "schaffen (crear)", prateritum: "schuf", perfekt: "hat geschaffen", meaning: "crear" },
-            { word: "scheiden", prateritum: "schied", perfekt: "hat / ist geschieden", meaning: "separar, divorciar" },
-            { word: "scheinen", prateritum: "schien", perfekt: "hat geschienen", meaning: "aparentar, brillar (sol)" },
-            { word: "schenken", prateritum: "schenkte", perfekt: "hat geschenkt", meaning: "regalar" },
-            { word: "schicken", prateritum: "schickte", perfekt: "hat geschickt", meaning: "enviar, mandar" },
-            { word: "schieben", prateritum: "schob", perfekt: "hat geschoben", meaning: "empujar" },
-            { word: "schießen", prateritum: "schoss", perfekt: "hat geschossen", meaning: "disparar" },
-            { word: "schlafen (schläft)", prateritum: "schlief", perfekt: "hat geschlafen", meaning: "dormir" },
-            { word: "schlagen (schlägt)", prateritum: "schlug", perfekt: "hat geschlagen", meaning: "pegar, golpear" },
-            { word: "schließen", prateritum: "schloss", perfekt: "hat geschlossen", meaning: "cerrar" },
-            { word: "schneiden", prateritum: "schnitt", perfekt: "hat geschnitten", meaning: "cortar" },
-            { word: "schmecken", prateritum: "schmeckte", perfekt: "hat geschmeckt", meaning: "gustar, saborear" },
-            { word: "schmelzen (schmilzt)", prateritum: "schmolz", perfekt: "hat / ist geschmolzen", meaning: "derretir(se)" },
-            { word: "schreiben", prateritum: "schrieb", perfekt: "hat geschrieben", meaning: "escribir" },
-            { word: "schreien", prateritum: "schrie", perfekt: "hat geschrie(e)n", meaning: "gritar" },
-            { word: "schweigen", prateritum: "schwieg", perfekt: "hat geschwiegen", meaning: "callar, estar callado" },
-            { word: "schwimmen", prateritum: "schwamm", perfekt: "ist geschwommen", meaning: "nadar" },
-            { word: "schwören", prateritum: "schwor", perfekt: "hat geschworen", meaning: "jurar" },
-            { word: "sehen (sieht)", prateritum: "sah", perfekt: "hat gesehen", meaning: "ver" },
-            { word: "sein (ist)", prateritum: "war", perfekt: "ist gewesen", meaning: "ser, estar" },
-            { word: "senden (radio, television)", prateritum: "sendete", perfekt: "hat gesendet", meaning: "enviar (radio, television)" },
-            { word: "senden (por correo)", prateritum: "sandte", perfekt: "hat gesandt", meaning: "enviar (por correo)" },
-            { word: "senken", prateritum: "senkte", perfekt: "hat gesenkt", meaning: "hundir" },
-            { word: "singen", prateritum: "sang", perfekt: "hat gesungen", meaning: "cantar" },
-            { word: "sinken", prateritum: "sank", perfekt: "ist gesunken", meaning: "hundirse" },
-            { word: "sitzen", prateritum: "saß", perfekt: "hat, ist gesessen", meaning: "estar sentado" },
-            { word: "spielen", prateritum: "spielte", perfekt: "hat gespielt", meaning: "jugar" },
-            { word: "sprechen (spricht)", prateritum: "sprach", perfekt: "hat gesprochen", meaning: "hablar" },
-            { word: "springen", prateritum: "sprang", perfekt: "ist gesprungen", meaning: "saltar" },
-            { word: "starten", prateritum: "startete", perfekt: "ist gestartet", meaning: "despegar" },
-            { word: "stechen (sticht)", prateritum: "stach", perfekt: "hat gestochen", meaning: "pinchar" },
-            { word: "stecken (meter)", prateritum: "steckte", perfekt: "hat gesteckt", meaning: "meter" },
-            { word: "stecken (estar metido)", prateritum: "stak", perfekt: "hat, ist gesteckt", meaning: "estar metido" },
-            { word: "stehen", prateritum: "stand", perfekt: "hat, ist gestanden", meaning: "estar de pie" },
-            { word: "stehlen (stiehlt)", prateritum: "stahl", perfekt: "hat gestohlen", meaning: "robar" },
-            { word: "steigen", prateritum: "stieg", perfekt: "ist gestiegen", meaning: "ascender, subir" },
-            { word: "stellen", prateritum: "stellte", perfekt: "hat gestellt", meaning: "colocar" },
-            { word: "sterben (stirbt)", prateritum: "starb", perfekt: "ist gestorben", meaning: "morir" },
-            { word: "stinken", prateritum: "stank", perfekt: "hat gestunken", meaning: "apestar" },
-            { word: "stören", prateritum: "störte", perfekt: "hat gestört", meaning: "molestar" },
-            { word: "stoßen (stößt)", prateritum: "stieß", perfekt: "hat gestoßen", meaning: "dar un empujón" },
-            { word: "streiten", prateritum: "stritt", perfekt: "hat gestritten", meaning: "pelear" },
-            { word: "suchen", prateritum: "suchte", perfekt: "hat gesucht", meaning: "buscar" },
-            { word: "tanzen", prateritum: "tanzte", perfekt: "hat getanzt", meaning: "bailar" },
-            { word: "tragen (trägt)", prateritum: "trug", perfekt: "hat getragen", meaning: "llevar" },
-            { word: "(sich) treffen (trifft)", prateritum: "traf", perfekt: "hat getroffen", meaning: "encontrar (personas), dar en el blanco" },
-            { word: "treiben (Sport)", prateritum: "trieb", perfekt: "hat getrieben", meaning: "hacer (deporte)" },
-            { word: "treten (tritt)", prateritum: "trat", perfekt: "hat / ist getreten", meaning: "entrar, pisar" },
-            { word: "trinken", prateritum: "trank", perfekt: "hat getrunken", meaning: "beber" },
-            { word: "tun", prateritum: "tat", perfekt: "hat getanzt", meaning: "hacer" },
-            { word: "üben", prateritum: "übte", perfekt: "hat geübt", meaning: "practicar" },
-            { word: "übernachten", prateritum: "übernachtete", perfekt: "hat übernachtet", meaning: "pernoctar" },
-            { word: "übersetzen", prateritum: "übersetzte", perfekt: "hat übersetzt", meaning: "traducir" },
-            { word: "sich unterhalten (unterhält sich)", prateritum: "unterhielt", perfekt: "hat sich unterhalten", meaning: "conversar" },
-            { word: "unterschreiben", prateritum: "unterschrieb", perfekt: "hat unterschrieben", meaning: "firmar" },
-            { word: "verbieten", prateritum: "verbot", perfekt: "hat verboten", meaning: "prohibir" },
-            { word: "verdienen", prateritum: "verdiente", perfekt: "hat verdient", meaning: "ganarse la vida" },
-            { word: "vergessen (vergisst)", prateritum: "vergaß", perfekt: "hat vergessen", meaning: "olvidar" },
-            { word: "vergleichen", prateritum: "verglich", perfekt: "hat verglichen", meaning: "comparar" },
-            { word: "verkaufen", prateritum: "verkaufte", perfekt: "hat verkauft", meaning: "vender" },
-            { word: "verlassen (verlässt)", prateritum: "verließ", perfekt: "hat verlassen", meaning: "dejar, abandonar" },
-            { word: "verlieren", prateritum: "verlor", perfekt: "hat verloren", meaning: "perder" },
-            { word: "vermieten", prateritum: "vermietete", perfekt: "hat vermietet", meaning: "dar en alquiler" },
-            { word: "verschwinden", prateritum: "verschwand", perfekt: "it verschwunden", meaning: "desaparecer" },
-            { word: "verstehen", prateritum: "verstand", perfekt: "hat verstanden", meaning: "entender" },
-            { word: "versuchen", prateritum: "versuchte", perfekt: "hat versucht", meaning: "intentar" },
-            { word: "vorstellen", prateritum: "stellte... vor", perfekt: "hat vorgestellt", meaning: "presentar a.." },
-            { word: "sich etwas vorstellen", prateritum: "stellte sich etwas vor", perfekt: "hat sich etwas vorgestellt", meaning: "imaginarse algo" },
-            { word: "wachsen (wächst)", prateritum: "wuchs", perfekt: "ist gewachsen", meaning: "crecer" },
-            { word: "warten", prateritum: "wartete", perfekt: "hat gewartet", meaning: "esperar" },
-            { word: "waschen (wäscht)", prateritum: "wusch", perfekt: "hat gewaschen", meaning: "lavar" },
-            { word: "wechseln", prateritum: "wechselte", perfekt: "hat gewechselt", meaning: "cambiar" },
-            { word: "weinen", prateritum: "weinte", perfekt: "hat geweint", meaning: "llorar" },
-            { word: "werben (wirbt)", prateritum: "warb", perfekt: "hat geworben", meaning: "hacer publicidad" },
-            { word: "werden (wird)", prateritum: "wurde", perfekt: "ist geworden", meaning: "llegar a ser" },
-            { word: "werfen (wirft)", prateritum: "warf", perfekt: "hat geworfen", meaning: "tirar, lanzar" },
-            { word: "wiegen", prateritum: "wog", perfekt: "hat gewogen", meaning: "pesar" },
-            { word: "wissen (weiß)", prateritum: "wusste", perfekt: "hat gewusst", meaning: "saber" },
-            { word: "wohnen", prateritum: "wohnte", perfekt: "hat gewohnt", meaning: "vivir" },
-            { word: "wollen (will)", prateritum: "wollte", perfekt: "hat gewollt", meaning: "querer" },
-            { word: "wünschen", prateritum: "wünschte", perfekt: "hat gewünscht", meaning: "desear" },
-            { word: "zahlen", prateritum: "zahlte", perfekt: "hat gezahlt", meaning: "pagar" },
-            { word: "zählen", prateritum: "zählte", perfekt: "hat gezählt", meaning: "contar números" },
-            { word: "zeigen", prateritum: "zeigte", perfekt: "hat gezeigt", meaning: "mostrar" },
-            { word: "ziehen", prateritum: "zog", perfekt: "hat gezogen", meaning: "tirar, sacar, extraer" },
-            { word: "zumachen", prateritum: "machte ... zu", perfekt: "hat zugemacht", meaning: "cerrar" },
-            { word: "zweifeln", prateritum: "zweifelte", perfekt: "hat gezweifelt", meaning: "dudar" },
-            { word: "zwingen", prateritum: "zwang", perfekt: "hat gezwungen", meaning: "obligar" }
+            { id: 1, word: "abfahren (fährt ...ab)", prateritum: "fuhr ...ab", perfekt: "ist abgefahren", meaning: "partir, salir" },
+            { id: 2, word: "abfliegen", prateritum: "flog ...ab", perfekt: "ist abflogen", meaning: "partir en avión" },
+            { id: 3, word: "anfangen (fängt ...an)", prateritum: "fing ...an", perfekt: "hat angefangen", meaning: "empezar" },
+            { id: 4, word: "anbieten", prateritum: "bot ...an", perfekt: "hat angeboten", meaning: "ofrecer" },
+            { id: 5, word: "ankommen", prateritum: "kam ...an", perfekt: "ist angekommen", meaning: "llegar" },
+            { id: 6, word: "anrufen", prateritum: "rief ...an", perfekt: "hat angerufen", meaning: "llamar por teléfono" },
+            { id: 7, word: "anschauen", prateritum: "schaute ...an", perfekt: "hat angeschaut", meaning: "mirar" },
+            { id: 8, word: "antworten", prateritum: "antwortete", perfekt: "hat geantwortet", meaning: "contestar" },
+            { id: 9, word: "anziehen", prateritum: "zog ...an", perfekt: "hat angezogen", meaning: "vestirse, ponerse algo" },
+            { id: 10, word: "arbeiten", prateritum: "arbeitete", perfekt: "hat gearbeitet", meaning: "trabajar" },
+            { id: 11, word: "aufhören", prateritum: "hörte ...auf", perfekt: "hat aufgehört", meaning: "terminar, dejar" },
+            { id: 12, word: "aufmachen", prateritum: "machte ...auf", perfekt: "hat aufgemacht", meaning: "abrir" },
+            { id: 13, word: "aufstehen", prateritum: "stand ...auf", perfekt: "ist aufgestanden", meaning: "levantarse" },
+            { id: 14, word: "ausfüllen", prateritum: "füllte ...aus", perfekt: "hat ausgefüllt", meaning: "rellenar (un formulario)" },
+            { id: 15, word: "ausgehen", prateritum: "ging ...aus", perfekt: "ist ausgegangen", meaning: "salir de casa por la noche a divertirse" },
+            { id: 16, word: "aussteigen", prateritum: "stieg ...aus", perfekt: "ist ausgestiegen", meaning: "apearse (bajar del transporte)" },
+            { id: 17, word: "ausziehen (quitarse)", prateritum: "zog ...aus", perfekt: "hat ausgezogen", meaning: "quitarse la ropa" },
+            { id: 18, word: "ausziehen (mudarse)", prateritum: "zog ...aus", perfekt: "ist ausgezogen", meaning: "mudarse de vivienda" },
+            { id: 19, word: "backen (bäckt)", prateritum: "buk", perfekt: "hat gebacken", meaning: "preparar algo al horno" },
+            { id: 20, word: "baden", prateritum: "badete", perfekt: "hat gebadet", meaning: "bañarse" },
+            { id: 21, word: "bauen", prateritum: "baute", perfekt: "hat gebaut", meaning: "construir" },
+            { id: 22, word: "befehlen (befiehlt)", prateritum: "befahl", perfekt: "hat befohlen", meaning: "dar ordenes" },
+            { id: 23, word: "beginnen", prateritum: "begann", perfekt: "hat begonnen", meaning: "comenzar" },
+            { id: 24, word: "begleiten", prateritum: "begleitete", perfekt: "hat begleitet", meaning: "acompañar" },
+            { id: 25, word: "beißen", prateritum: "biss", perfekt: "hat gebissen", meaning: "morder" },
+            { id: 26, word: "bekommen", prateritum: "bekam", perfekt: "hat bekommen", meaning: "recibir" },
+            { id: 27, word: "besichtigen", prateritum: "besichtigte", perfekt: "hat besichtigt", meaning: "visitar un museo, ciudad.." },
+            { id: 28, word: "bestellen", prateritum: "bestellte", perfekt: "hat bestellt", meaning: "reservar, encargar" },
+            { id: 29, word: "besuchen", prateritum: "besuchte", perfekt: "hat besucht", meaning: "visitar, asistir a.." },
+            { id: 30, word: "beten", prateritum: "betete", perfekt: "hat gebetet", meaning: "rezar" },
+            { id: 31, word: "bewegen", prateritum: "bewegte", perfekt: "hat bewegt", meaning: "mover" },
+            { id: 32, word: "beweisen", prateritum: "bewies", perfekt: "hat bewiesen", meaning: "probar, demostrar" },
+            { id: 33, word: "bewerben (bewirbt)", prateritum: "bewarb", perfekt: "hat beworben", meaning: "solicitar (trabajo, beca)" },
+            { id: 34, word: "bezahlen", prateritum: "bezahlte", perfekt: "hat bezahlt", meaning: "pagar" },
+            { id: 35, word: "biegen", prateritum: "bog", perfekt: "hat/ist gebogen", meaning: "doblar, torcer" },
+            { id: 36, word: "bieten", prateritum: "bot", perfekt: "hat geboten", meaning: "ofrecer" },
+            { id: 37, word: "binden", prateritum: "band", perfekt: "hat gebunden", meaning: "atar, unir" },
+            { id: 38, word: "bitten", prateritum: "bat", perfekt: "hat gebeten", meaning: "ofrecer" },
+            { id: 39, word: "bleiben", prateritum: "blieb", perfekt: "ist geblieben", meaning: "Permanecer, quedarse" },
+            { id: 40, word: "brauchen", prateritum: "brauchte", perfekt: "hat gebraucht", meaning: "necesitar" },
+            { id: 41, word: "braten (brät)", prateritum: "briet", perfekt: "hat gebraten", meaning: "freir, asar" },
+            { id: 42, word: "brechen", prateritum: "brach", perfekt: "hat/ist gebrochen", meaning: "quebrar, romper" },
+            { id: 43, word: "brennen", prateritum: "brannte", perfekt: "hat gebrannt", meaning: "quemar, arder" },
+            { id: 44, word: "bringen", prateritum: "brachte", perfekt: "hat gebracht", meaning: "traer, llevar" },
+            { id: 45, word: "buchen", prateritum: "buchte", perfekt: "hat gebucht", meaning: "reservar" },
+            { id: 46, word: "buchstabieren", prateritum: "buchstabierte", perfekt: "hat buchstabiert", meaning: "deletrear" },
+            { id: 47, word: "danken", prateritum: "dankte", perfekt: "hat gedankt", meaning: "agradecer" },
+            { id: 48, word: "dauern", prateritum: "dauerte", perfekt: "hat gedauert", meaning: "durar" },
+            { id: 49, word: "denken", prateritum: "dachte", perfekt: "hat gedacht", meaning: "pensar" },
+            { id: 50, word: "diskutieren", prateritum: "diskutierte", perfekt: "hat diskutiert", meaning: "discutir" },
+            { id: 51, word: "dürfen (darf)", prateritum: "durfte", perfekt: "hat gedurft", meaning: "poder, no está prohibido" },
+            { id: 52, word: "duschen", prateritum: "duschte", perfekt: "hat geduscht", meaning: "tomar una ducha" },
+            { id: 53, word: "einkaufen", prateritum: "kaufte ... ein", perfekt: "hat eingekauft", meaning: "hacer compras" },
+            { id: 54, word: "einladen (lädt ... ein)", prateritum: "lud ... ein", perfekt: "hat eingeladen", meaning: "invitar" },
+            { id: 55, word: "einsteigen", prateritum: "stieg... ein", perfekt: "ist eingestiegen", meaning: "subir al coche..." },
+            { id: 56, word: "empfangen (empfängt)", prateritum: "empfing", perfekt: "hat empfangen", meaning: "recibir (personas, o mensajes)" },
+            { id: 57, word: "empfehlen (empfiehlt)", prateritum: "empfahl", perfekt: "hat empfohlen", meaning: "recomendar" },
+            { id: 58, word: "entschuldigen", prateritum: "entschuldigte", perfekt: "hat entschuldigt", meaning: "disculpar" },
+            { id: 59, word: "erfüllen", prateritum: "erfüllte", perfekt: "har erfüllt", meaning: "satisfacer un deseo o condiciones" },
+            { id: 60, word: "sich erholen", prateritum: "erholte sich", perfekt: "hat sich erholt", meaning: "recuperarse" },
+            { id: 61, word: "erreichen", prateritum: "erreichte", perfekt: "hat erreicht", meaning: "alcanzar" },
+            { id: 62, word: "erschrecken (transitivo - asustar)", prateritum: "erschreckte", perfekt: "hat erschreckt", meaning: "asustar" },
+            { id: 63, word: "erschrecken (intransitivo - asustarse)", prateritum: "erschrak", perfekt: "ist erschrocken", meaning: "asustarse" },
+            { id: 64, word: "erzählen", prateritum: "erzählte", perfekt: "hat erzählt", meaning: "narrar" },
+            { id: 65, word: "essen", prateritum: "aß", perfekt: "hat gegessen", meaning: "comer" },
+            { id: 66, word: "fahren (fährt)", prateritum: "fuhr", perfekt: "ist gefahren", meaning: "ir en coche, tren.." },
+            { id: 67, word: "fallen (fällt)", prateritum: "fiel", perfekt: "ist gefallen", meaning: "caer" },
+            { id: 68, word: "fernsehen (sieht...fern)", prateritum: "sah ...fern", perfekt: "hat ferngesehen", meaning: "mirar la tv" },
+            { id: 69, word: "findenfand", prateritum: "fand", perfekt: "hat gefunden", meaning: "encontrar" },
+            { id: 70, word: "fliegen", prateritum: "flog", perfekt: "hat /ist geflogen", meaning: "volar" },
+            { id: 71, word: "fliehen", prateritum: "floh", perfekt: "ist geflohen", meaning: "huir" },
+            { id: 72, word: "fließen", prateritum: "floss", perfekt: "ist geflossen", meaning: "fluir" },
+            { id: 73, word: "fragen", prateritum: "fragte", perfekt: "hat gefragt", meaning: "preguntar" },
+            { id: 74, word: "fressen (frisst)", prateritum: "fraß", perfekt: "hat gefressen", meaning: "devorar, comer (de animales)" },
+            { id: 75, word: "sich freuen", prateritum: "freute sich", perfekt: "hat sich gefreut", meaning: "alegrarse" },
+            { id: 76, word: "frieren", prateritum: "fror", perfekt: "hat/ist gefrogen", meaning: "helarse, congelarse" },
+            { id: 77, word: "frühstücken", prateritum: "früstückte", perfekt: "hat gefrühstuckt", meaning: "desayunar" },
+            { id: 78, word: "fühlen", prateritum: "fühlte", perfekt: "hat gefühlt", meaning: "sentir" },
+            { id: 79, word: "geben (gibt)", prateritum: "gab", perfekt: "hat gegeben", meaning: "dar" },
+            { id: 80, word: "gefallen (gefällt)", prateritum: "gefiel", perfekt: "hat gefallen", meaning: "gustar" },
+            { id: 81, word: "gehen", prateritum: "ging", perfekt: "ist gegangen", meaning: "ir" },
+            { id: 82, word: "gehören", prateritum: "gehörte", perfekt: "hat gehört", meaning: "pertenecer" },
+            { id: 83, word: "gelingen", prateritum: "gelang", perfekt: "ist gelungen", meaning: "resultar, salir bien" },
+            { id: 84, word: "gelten (gilt)", prateritum: "galt", perfekt: "hat gegolten", meaning: "valer, ser válido" },
+            { id: 85, word: "genießen", prateritum: "genoss", perfekt: "hat genossen", meaning: "disfrutar" },
+            { id: 86, word: "geschehen (geschieht)", prateritum: "geschah", perfekt: "ist geschehen", meaning: "suceder - sólo 3a sing" },
+            { id: 87, word: "gewinnen", prateritum: "gewann", perfekt: "hat gewonnen", meaning: "ganar" },
+            { id: 88, word: "gießen", prateritum: "goss", perfekt: "hat gegossen", meaning: "regar" },
+            { id: 89, word: "glauben", prateritum: "glaubte", perfekt: "hat geblaut", meaning: "creer" },
+            { id: 90, word: "graben (gräbt)", prateritum: "grub", perfekt: "hat gegraben", meaning: "cavar" },
+            { id: 91, word: "grüßen", prateritum: "grüßte", perfekt: "hat gegrüßt", meaning: "saludar" },
+            { id: 92, word: "gucken", prateritum: "guckte", perfekt: "hat geguckt", meaning: "mirar" },
+            { id: 93, word: "haben (hat)", prateritum: "hatte", perfekt: "hat gehabt", meaning: "tener" },
+            { id: 94, word: "halten (hält)", prateritum: "hielt", perfekt: "hat gehalten", meaning: "parar, sostener" },
+            { id: 95, word: "hängen (transitivo - colgar)", prateritum: "hängte", perfekt: "hat gehängt", meaning: "colgar" },
+            { id: 96, word: "hängen (intransitivo - estar colgado)", prateritum: "hing", perfekt: "hat, ist gehangen", meaning: "estar colgado" },
+            { id: 97, word: "heben", prateritum: "hob", perfekt: "hat gehoben", meaning: "alzar, levantar" },
+            { id: 98, word: "heiraten", prateritum: "heiratete", perfekt: "hat geheiratet", meaning: "casarse" },
+            { id: 99, word: "heißen", prateritum: "hieß", perfekt: "hat geheißen", meaning: "llamarse" },
+            { id: 100, word: "helfen", prateritum: "half", perfekt: "hat geholfen", meaning: "ayudar" },
+            { id: 101, word: "holen", prateritum: "holte", perfekt: "hat geholt", meaning: "ir a buscar" },
+            { id: 102, word: "hören", prateritum: "hörte", perfekt: "hat gehört", meaning: "oir" },
+            { id: 103, word: "sich interessieren", prateritum: "interessierte sich", perfekt: "hat sich interessiert", meaning: "interesarse" },
+            { id: 104, word: "kaufen", prateritum: "kaufte", perfekt: "hat gekauft", meaning: "comprar" },
+            { id: 105, word: "kennen", prateritum: "kannte", perfekt: "hat gekannt", meaning: "conocer" },
+            { id: 106, word: "klingeln", prateritum: "klingelte", perfekt: "hat geklingelt", meaning: "tocar o sonar un timbre" },
+            { id: 107, word: "klingen", prateritum: "klang", perfekt: "hat geklungen", meaning: "sonar" },
+            { id: 108, word: "kochen", prateritum: "kochte", perfekt: "hat gekocht", meaning: "cocinar, servir" },
+            { id: 109, word: "kommen", prateritum: "kam", perfekt: "ist gekommen", meaning: "venir" },
+            { id: 110, word: "können (kann)", prateritum: "konnte", perfekt: "hat gekonnt", meaning: "poder, saber" },
+            { id: 111, word: "kosten", prateritum: "kostete", perfekt: "hat gekostet", meaning: "costar" },
+            { id: 112, word: "küssen", prateritum: "küsste", perfekt: "hat geküsst", meaning: "besar" },
+            { id: 113, word: "lachen", prateritum: "lachte", perfekt: "hat gelacht", meaning: "reír" },
+            { id: 114, word: "laden (lädt)", prateritum: "lud", perfekt: "hat geladen", meaning: "cargar (mercancía)" },
+            { id: 115, word: "landen", prateritum: "landete", perfekt: "ist gelandet", meaning: "aterrizar" },
+            { id: 116, word: "lassen (lässt)", prateritum: "ließ", perfekt: "hat gelassen", meaning: "dejar, permitir" },
+            { id: 117, word: "laufen (läuft)", prateritum: "lief", perfekt: "ist gelaufen", meaning: "correr" },
+            { id: 118, word: "leben", prateritum: "lebte", perfekt: "hat gelebt", meaning: "vivir" },
+            { id: 119, word: "legen", prateritum: "legte", perfekt: "hat gelegt", meaning: "colocar" },
+            { id: 120, word: "leiden", prateritum: "litt", perfekt: "hat gelitten", meaning: "sufrir" },
+            { id: 121, word: "leihen", prateritum: "lieh", perfekt: "hat geliehen", meaning: "prestar" },
+            { id: 122, word: "lernen", prateritum: "lernte", perfekt: "hat gelernt", meaning: "aprender" },
+            { id: 123, word: "lesen (liest)", prateritum: "las", perfekt: "hat gelesen", meaning: "leer" },
+            { id: 124, word: "lieben", prateritum: "liebte", perfekt: "hat geliebt", meaning: "amar" },
+            { id: 125, word: "liegen (estar extendido)", prateritum: "lag", perfekt: "hat, ist gelegen", meaning: "estar extendido, yacer" },
+            { id: 126, word: "lügen", prateritum: "log", perfekt: "hat gelogen", meaning: "mentir" },
+            { id: 127, word: "machen", prateritum: "machte", perfekt: "hat gemacht", meaning: "hacer" },
+            { id: 128, word: "meinen", prateritum: "meinte", perfekt: "hat gemeint", meaning: "opinar" },
+            { id: 129, word: "messen (misst)", prateritum: "maß", perfekt: "hat gemessen", meaning: "medir" },
+            { id: 130, word: "mögen (mag)", prateritum: "mochte", perfekt: "hat gemocht", meaning: "gustar, querer" },
+            { id: 131, word: "müssen (muss)", prateritum: "musste", perfekt: "hat gemusst", meaning: "tener que" },
+            { id: 132, word: "nehmen (nimmt)", prateritum: "nahm", perfekt: "hat genommen", meaning: "tomar, coger" },
+            { id: 133, word: "nennen", prateritum: "nannte", perfekt: "hat genannt", meaning: "nombrar, llamar" },
+            { id: 134, word: "öffnen", prateritum: "öffnete", perfekt: "hat geöffnet", meaning: "abrir" },
+            { id: 135, word: "packen", prateritum: "packte", perfekt: "hat gepackt", meaning: "empaquetar" },
+            { id: 136, word: "parken", prateritum: "parkte", perfekt: "hat geparkt", meaning: "aparcar" },
+            { id: 137, word: "passen", prateritum: "passte", perfekt: "hat gepasst", meaning: "venir bien, combinar" },
+            { id: 138, word: "pfeifen", prateritum: "pfiff", perfekt: "hat gepfiffen", meaning: "silbar" },
+            { id: 139, word: "putzen", prateritum: "putzte", perfekt: "hat geputzt", meaning: "limpiar" },
+            { id: 140, word: "raten (rät)", prateritum: "riet", perfekt: "hat geraten", meaning: "aconsejar, adivinar" },
+            { id: 141, word: "rauchen", prateritum: "rauchte", perfekt: "hat geraucht", meaning: "fumar" },
+            { id: 142, word: "reden", prateritum: "redete", perfekt: "hat geredet", meaning: "charlar" },
+            { id: 143, word: "regnen (es regnet)", prateritum: "es regnete", perfekt: "es hat geregnet", meaning: "llover" },
+            { id: 144, word: "reisen", prateritum: "reiste", perfekt: "ist gereist", meaning: "viajar" },
+            { id: 145, word: "reiten", prateritum: "ritt", perfekt: "hat / ist geritten", meaning: "cabalgar" },
+            { id: 146, word: "rennen", prateritum: "rannte", perfekt: "ist gerannt", meaning: "correr rápido" },
+            { id: 147, word: "reparieren", prateritum: "reparierte", perfekt: "hat repariert", meaning: "reparar" },
+            { id: 148, word: "riechen", prateritum: "roch", perfekt: "hat gerochen", meaning: "oler" },
+            { id: 149, word: "rufen", prateritum: "rief", perfekt: "hat gerufen", meaning: "llamar" },
+            { id: 150, word: "sagen", prateritum: "sagte", perfekt: "hat gesagt", meaning: "decir" },
+            { id: 151, word: "saufen (säuft)", prateritum: "soff", perfekt: "hat gesoffen", meaning: "beber mucho alcohol" },
+            { id: 152, word: "schaffen (lograr)", prateritum: "schaffte", perfekt: "hat geschafft", meaning: "conseguir, lograr" },
+            { id: 153, word: "schaffen (crear)", prateritum: "schuf", perfekt: "hat geschaffen", meaning: "crear" },
+            { id: 154, word: "scheiden", prateritum: "schied", perfekt: "hat / ist geschieden", meaning: "separar, divorciar" },
+            { id: 155, word: "scheinen", prateritum: "schien", perfekt: "hat geschienen", meaning: "aparentar, brillar (sol)" },
+            { id: 156, word: "schenken", prateritum: "schenkte", perfekt: "hat geschenkt", meaning: "regalar" },
+            { id: 157, word: "schicken", prateritum: "schickte", perfekt: "hat geschickt", meaning: "enviar, mandar" },
+            { id: 158, word: "schieben", prateritum: "schob", perfekt: "hat geschoben", meaning: "empujar" },
+            { id: 159, word: "schießen", prateritum: "schoss", perfekt: "hat geschossen", meaning: "disparar" },
+            { id: 160, word: "schlafen (schläft)", prateritum: "schlief", perfekt: "hat geschlafen", meaning: "dormir" },
+            { id: 161, word: "schlagen (schlägt)", prateritum: "schlug", perfekt: "hat geschlagen", meaning: "pegar, golpear" },
+            { id: 162, word: "schließen", prateritum: "schloss", perfekt: "hat geschlossen", meaning: "cerrar" },
+            { id: 163, word: "schneiden", prateritum: "schnitt", perfekt: "hat geschnitten", meaning: "cortar" },
+            { id: 164, word: "schmecken", prateritum: "schmeckte", perfekt: "hat geschmeckt", meaning: "gustar, saborear" },
+            { id: 165, word: "schmelzen (schmilzt)", prateritum: "schmolz", perfekt: "hat / ist geschmolzen", meaning: "derretir(se)" },
+            { id: 166, word: "schreiben", prateritum: "schrieb", perfekt: "hat geschrieben", meaning: "escribir" },
+            { id: 167, word: "schreien", prateritum: "schrie", perfekt: "hat geschrie(e)n", meaning: "gritar" },
+            { id: 168, word: "schweigen", prateritum: "schwieg", perfekt: "hat geschwiegen", meaning: "callar, estar callado" },
+            { id: 169, word: "schwimmen", prateritum: "schwamm", perfekt: "ist geschwommen", meaning: "nadar" },
+            { id: 170, word: "schwören", prateritum: "schwor", perfekt: "hat geschworen", meaning: "jurar" },
+            { id: 171, word: "sehen (sieht)", prateritum: "sah", perfekt: "hat gesehen", meaning: "ver" },
+            { id: 172, word: "sein (ist)", prateritum: "war", perfekt: "ist gewesen", meaning: "ser, estar" },
+            { id: 173, word: "senden (radio, television)", prateritum: "sendete", perfekt: "hat gesendet", meaning: "enviar (radio, television)" },
+            { id: 174, word: "senden (por correo)", prateritum: "sandte", perfekt: "hat gesandt", meaning: "enviar (por correo)" },
+            { id: 175, word: "senken", prateritum: "senkte", perfekt: "hat gesenkt", meaning: "hundir" },
+            { id: 176, word: "singen", prateritum: "sang", perfekt: "hat gesungen", meaning: "cantar" },
+            { id: 177, word: "sinken", prateritum: "sank", perfekt: "ist gesunken", meaning: "hundirse" },
+            { id: 178, word: "sitzen", prateritum: "saß", perfekt: "hat, ist gesessen", meaning: "estar sentado" },
+            { id: 179, word: "spielen", prateritum: "spielte", perfekt: "hat gespielt", meaning: "jugar" },
+            { id: 180, word: "sprechen (spricht)", prateritum: "sprach", perfekt: "hat gesprochen", meaning: "hablar" },
+            { id: 181, word: "springen", prateritum: "sprang", perfekt: "ist gesprungen", meaning: "saltar" },
+            { id: 182, word: "starten", prateritum: "startete", perfekt: "ist gestartet", meaning: "despegar" },
+            { id: 183, word: "stechen (sticht)", prateritum: "stach", perfekt: "hat gestochen", meaning: "pinchar" },
+            { id: 184, word: "stecken (meter)", prateritum: "steckte", perfekt: "hat gesteckt", meaning: "meter" },
+            { id: 185, word: "stecken (estar metido)", prateritum: "stak", perfekt: "hat, ist gesteckt", meaning: "estar metido" },
+            { id: 186, word: "stehen", prateritum: "stand", perfekt: "hat, ist gestanden", meaning: "estar de pie" },
+            { id: 187, word: "stehlen (stiehlt)", prateritum: "stahl", perfekt: "hat gestohlen", meaning: "robar" },
+            { id: 188, word: "steigen", prateritum: "stieg", perfekt: "ist gestiegen", meaning: "ascender, subir" },
+            { id: 189, word: "stellen", prateritum: "stellte", perfekt: "hat gestellt", meaning: "colocar" },
+            { id: 190, word: "sterben (stirbt)", prateritum: "starb", perfekt: "ist gestorben", meaning: "morir" },
+            { id: 191, word: "stinken", prateritum: "stank", perfekt: "hat gestunken", meaning: "apestar" },
+            { id: 192, word: "stören", prateritum: "störte", perfekt: "hat gestört", meaning: "molestar" },
+            { id: 193, word: "stoßen (stößt)", prateritum: "stieß", perfekt: "hat gestoßen", meaning: "dar un empujón" },
+            { id: 194, word: "streiten", prateritum: "stritt", perfekt: "hat gestritten", meaning: "pelearsuchensuchtehat gesucht" },
+            { id: 195, word: "suchen", prateritum: "suchte", perfekt: "hat gesucht", meaning: "buscar" },
+            { id: 196, word: "tanzen", prateritum: "tanzte", perfekt: "hat getanzt", meaning: "bailar" },
+            { id: 197, word: "tragen (trägt)", prateritum: "trug", perfekt: "hat getragen", meaning: "llevar" },
+            { id: 198, word: "(sich) treffen (trifft)", prateritum: "traf", perfekt: "hat getroffen", meaning: "encontrar (personas), dar en el blanco" },
+            { id: 199, word: "treiben (Sport)", prateritum: "trieb", perfekt: "hat getrieben", meaning: "hacer (deporte)" },
+            { id: 200, word: "treten (tritt)", prateritum: "trat", perfekt: "hat / ist getreten", meaning: "entrar, pisar" },
+            { id: 201, word: "trinken", prateritum: "trank", perfekt: "hat getrunken", meaning: "beber" },
+            { id: 202, word: "tun", prateritum: "tat", perfekt: "hat getanzt", meaning: "hacer" },
+            { id: 203, word: "üben", prateritum: "übte", perfekt: "hat geübt", meaning: "practicar" },
+            { id: 204, word: "übernachten", prateritum: "übernachtete", perfekt: "hat übernachtet", meaning: "pernoctar" },
+            { id: 205, word: "übersetzen", prateritum: "übersetzte", perfekt: "hat übersetzt", meaning: "traducir" },
+            { id: 206, word: "sich unterhalten (unterhält sich)", prateritum: "unterhielt", perfekt: "hat sich unterhalten", meaning: "conversar" },
+            { id: 207, word: "unterschreiben", prateritum: "unterschrieb", perfekt: "hat unterschrieben", meaning: "firmar" },
+            { id: 208, word: "verbieten", prateritum: "verbot", perfekt: "hat verboten", meaning: "prohibir" },
+            { id: 209, word: "verdienen", prateritum: "verdiente", perfekt: "hat verdient", meaning: "ganarse la vida" },
+            { id: 210, word: "vergessen (vergisst)", prateritum: "vergaß", perfekt: "hat vergessen", meaning: "olvidar" },
+            { id: 211, word: "vergleichen", prateritum: "verglich", perfekt: "hat verglichen", meaning: "comparar" },
+            { id: 212, word: "verkaufen", prateritum: "verkaufte", perfekt: "hat verkauft", meaning: "vender" },
+            { id: 213, word: "verlassen (verlässt)", prateritum: "verließ", perfekt: "hat verlassen", meaning: "dejar, abandonar" },
+            { id: 214, word: "verlieren", prateritum: "verlor", perfekt: "hat verloren", meaning: "perder" },
+            { id: 215, word: "vermieten", prateritum: "vermietete", perfekt: "hat vermietet", meaning: "dar en alquiler" },
+            { id: 216, word: "verschwinden", prateritum: "verschwand", perfekt: "ist verschwunden", meaning: "desaparecer" },
+            { id: 217, word: "verstehen", prateritum: "verstand", perfekt: "hat verstanden", meaning: "entender" },
+            { id: 218, word: "versuchen", prateritum: "versuchte", perfekt: "hat versucht", meaning: "intentar" },
+            { id: 219, word: "vorstellen", prateritum: "stellte... vor", perfekt: "hat vorgestellt", meaning: "presentar a.." },
+            { id: 220, word: "sich etwas vorstellen", prateritum: "stellte sich etwas vor", perfekt: "hat sich etwas vorgestellt", meaning: "imaginarse algo" },
+            { id: 221, word: "wachsen (wächst)", prateritum: "wuchs", perfekt: "ist gewachsen", meaning: "crecer" },
+            { id: 222, word: "warten", prateritum: "wartete", perfekt: "hat gewartet", meaning: "esperar" },
+            { id: 223, word: "waschen (wäscht)", prateritum: "wusch", perfekt: "hat gewaschen", meaning: "lavar" },
+            { id: 224, word: "wechseln", prateritum: "wechselte", perfekt: "hat gewechselt", meaning: "cambiar" },
+            { id: 225, word: "weinen", prateritum: "weinte", perfekt: "hat geweint", meaning: "llorar" },
+            { id: 226, word: "werben (wirbt)", prateritum: "warb", perfekt: "hat geworben", meaning: "hacer publicidad" },
+            { id: 227, word: "werden (wird)", prateritum: "wurde", perfekt: "ist geworden", meaning: "llegar a ser" },
+            { id: 228, word: "werfen (wirft)", prateritum: "warf", perfekt: "hat geworfen", meaning: "tirar, lanzar" },
+            { id: 229, word: "wiegen", prateritum: "wog", perfekt: "hat gewogen", meaning: "pesar" },
+            { id: 230, word: "wissen (weiß)", prateritum: "wusste", perfekt: "hat gewusst", meaning: "saber" },
+            { id: 231, word: "wohnen", prateritum: "wohnte", perfekt: "hat gewohnt", meaning: "vivir" },
+            { id: 232, word: "wollen (will)", prateritum: "wollte", perfekt: "hat gewollt", meaning: "querer" },
+            { id: 233, word: "wünschen", prateritum: "wünschte", perfekt: "hat gewünscht", meaning: "desear" },
+            { id: 234, word: "zahlen", prateritum: "zahlte", perfekt: "hat gezahlt", meaning: "pagar" },
+            { id: 235, word: "zählen", prateritum: "zählte", perfekt: "hat gezählt", meaning: "contar números" },
+            { id: 236, word: "zeigen", prateritum: "zeigte", perfekt: "hat gezeigt", meaning: "mostrar" },
+            { id: 237, word: "ziehen", prateritum: "zog", perfekt: "hat gezogen", meaning: "tirar, sacar, extraer" },
+            { id: 238, word: "zumachen", prateritum: "machte ... zu", perfekt: "hat zugemacht", meaning: "cerrar" },
+            { id: 239, word: "zweifeln", prateritum: "zweifelte", perfekt: "hat gezweifelt", meaning: "dudar" },
+            { id: 240, word: "zwingen", prateritum: "zwang", perfekt: "hat gezwungen", meaning: "obligar" }
         ];
 
-        // --- LÓGICA DEL JUEGO ---
+        // --- LÓGICA DEL JUEGO CON REPETICIÓN ESPACIADA ---
 
         const questionText = document.getElementById('question-text');
         const optionsContainer = document.getElementById('options-container');
@@ -406,11 +444,22 @@
         const perfektInput = document.getElementById('perfekt-input');
         const prateritumFeedback = document.getElementById('prateritum-feedback');
         const perfektFeedback = document.getElementById('perfekt-feedback');
-
+        const learnedWordsList = document.getElementById('learned-words-list');
+        const repetitionStatus = document.getElementById('repetition-status');
+        const learnedCountSpan = document.getElementById('learned-count');
+        const totalCountSpan = document.getElementById('total-count');
+        
+        // ** NUEVOS PARÁMETROS DE REPETICIÓN ESPACIADA **
+        const REPETITION_DELAY = 3; // Número de palabras nuevas que deben pasar antes de repetir una fallada.
+        
+        // Variables de estado del juego
         let currentWord = {};
-        let currentStep = 1; // 1: Meaning, 2: Präteritum/Perfekt
+        let learnedWords = []; 
+        let failedWordsQueue = []; // Almacena objetos { word: {...}, delay: 3 }
+        
+        // Inicializar el contador total
+        totalCountSpan.textContent = vocabulary.length;
 
-        // Función para mezclar un array
         function shuffleArray(array) {
             for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -419,28 +468,158 @@
             return array;
         }
 
-        // Función para limpiar y normalizar la entrada (elimina espacios extra y convierte a minúsculas)
         function normalizeInput(str) {
             if (!str) return "";
             return str.toLowerCase().replace(/\s+/g, ' ').trim();
         }
+
+        // --- Funciones de Gestión de Palabras ---
+
+        function isWordLearned(id) {
+            return learnedWords.includes(id);
+        }
+
+        function getNextWord() {
+            // 1. Decrementar el retraso de todas las palabras falladas elegibles.
+            // Si la palabra actual es de repetición, no la incluimos en el decremento para evitar que se repita inmediatamente si se falla de nuevo.
+            const wordToRepeat = failedWordsQueue.find(item => item.delay <= 0)?.word;
+
+            // 2. Priorizar una palabra de repetición si está lista
+            if (wordToRepeat) {
+                // Eliminarla de la cola y devolverla
+                failedWordsQueue = failedWordsQueue.filter(item => item.word.id !== wordToRepeat.id);
+                repetitionStatus.innerHTML = `🚨 **Repetición** - Palabra fallada anteriormente. Te quedan ${failedWordsQueue.filter(item => item.delay > 0).length} palabras en espera.`;
+                return wordToRepeat;
+            }
+            
+            // 3. Si no hay repeticiones listas, buscar una palabra nueva al azar
+            const unlearnedWords = vocabulary.filter(w => !isWordLearned(w.id));
+            
+            if (unlearnedWords.length === 0 && failedWordsQueue.length === 0) {
+                // Todas las palabras aprendidas
+                repetitionStatus.textContent = '';
+                return null; 
+            }
+
+            // 4. Si hay palabras nuevas disponibles, elegir una y bajar el contador de la cola
+            if (unlearnedWords.length > 0) {
+                // Bajar el contador de retraso de las que no están listas
+                failedWordsQueue.forEach(item => {
+                    if (item.delay > 0) {
+                        item.delay--;
+                    }
+                });
+                
+                shuffleArray(unlearnedWords);
+                repetitionStatus.textContent = `Palabra nueva. ${failedWordsQueue.length} palabras esperando repetición.`;
+                return unlearnedWords[0];
+            }
+
+            // 5. Caso borde: Solo quedan repeticiones pero ninguna está lista.
+            repetitionStatus.textContent = `Esperando el retraso de repetición. Te quedan ${failedWordsQueue.length} palabras en espera.`;
+            return getNextWordToFillDelay();
+        }
+
+        function getNextWordToFillDelay() {
+            // Si solo quedan repeticiones con delay positivo, elegimos una palabra YA APRENDIDA para rellenar el hueco
+            // Esto es importante para mantener el ritmo si solo quedan repeticiones.
+            const learned = vocabulary.filter(w => isWordLearned(w.id));
+            if (learned.length > 0) {
+                shuffleArray(learned);
+                return learned[0];
+            }
+            // Si no hay nada aprendido, tomamos una palabra nueva (ya se filtró arriba, esto es solo por seguridad)
+            return vocabulary.filter(w => !isWordLearned(w.id))[0];
+        }
+
+
+        function addWordToQueue(wordObject) {
+            // Solo añadir si no está ya en la cola (para evitar repeticiones múltiples en la misma ronda fallida)
+            const isAlreadyQueued = failedWordsQueue.some(item => item.word.id === wordObject.id);
+            if (!isAlreadyQueued) {
+                failedWordsQueue.push({ 
+                    word: wordObject, 
+                    delay: REPETITION_DELAY 
+                });
+            } else {
+                // Si ya está en cola, reiniciamos su delay a REPETITION_DELAY
+                const item = failedWordsQueue.find(item => item.word.id === wordObject.id);
+                if (item) item.delay = REPETITION_DELAY;
+            }
+            repetitionStatus.textContent = `Palabra fallada. Se repetirá en ${REPETITION_DELAY} rondas.`;
+        }
+
+        function markWordAsLearned(wordObject) {
+            if (!isWordLearned(wordObject.id)) {
+                learnedWords.push(wordObject.id);
+                learnedCountSpan.textContent = learnedWords.length;
+                updateLearnedWordsPanel();
+            }
+        }
+
+        function updateLearnedWordsPanel() {
+            learnedWordsList.innerHTML = '';
+            
+            if (learnedWords.length === 0) {
+                learnedWordsList.innerHTML = '<li>Aún no has completado ninguna palabra. ¡Empieza!</li>';
+                return;
+            }
+
+            const learnedData = vocabulary.filter(w => isWordLearned(w.id));
+            
+            // Ordenar por infinitivo para mejor visualización
+            learnedData.sort((a, b) => a.word.localeCompare(b.word)); 
+
+            learnedData.forEach(word => {
+                const li = document.createElement('li');
+                li.classList.add('learned-item');
+                li.innerHTML = `
+                    <strong>${word.word}</strong>
+                    <span>Präteritum: ${word.prateritum}</span>
+                    <span>Perfekt: ${word.perfekt}</span>
+                    <span>Español: ${word.meaning}</span>
+                `;
+                learnedWordsList.appendChild(li);
+            });
+        }
+
 
         // ------------------
         // FASE 1: Significado (Opciones Múltiples)
         // ------------------
 
         function startNewWord() {
-            // 1. Resetear el estado
-            currentStep = 1;
+            const nextWord = getNextWord();
+            
+            if (!nextWord) {
+                questionText.textContent = "🎉 ¡Felicidades! Has completado todo el vocabulario.";
+                optionsContainer.innerHTML = '';
+                inputContainer.classList.add('hidden');
+                nextButton.classList.add('hidden');
+                checkButton.classList.add('hidden');
+                feedbackOverall.textContent = "";
+                repetitionStatus.textContent = "";
+                return;
+            }
+
+            // Si la palabra es ya aprendida (solo rellena el hueco), saltamos fases 2/3.
+            if (isWordLearned(nextWord.id) && failedWordsQueue.length > 0) {
+                // Si la palabra ya está aprendida y fue elegida solo para rellenar el delay, la saltamos tras un aviso.
+                currentWord = nextWord;
+                repetitionStatus.textContent = `Tiempo de espera. Repasando palabra: ${currentWord.word} (${currentWord.meaning}).`
+                setTimeout(startNewWord, 2000); // 2 segundos y pasamos a la siguiente.
+                return;
+            }
+
+
+            currentWord = nextWord;
+
+            // 1. Resetear el estado de la UI
             feedbackOverall.textContent = '';
             checkButton.classList.add('hidden');
             nextButton.classList.add('hidden');
             
-            // 2. Elegir una nueva palabra
-            const wordIndex = Math.floor(Math.random() * vocabulary.length);
-            currentWord = vocabulary[wordIndex];
-
-            // 3. Preparar la Interfaz para la Fase 1
+            // 2. Preparar la Interfaz para la Fase 1
             inputContainer.classList.add('hidden');
             optionsContainer.classList.remove('hidden');
             
@@ -448,7 +627,7 @@
         }
 
         function renderMeaningQuestion() {
-            currentStepTitle.textContent = `Paso ${currentStep} de 3: Significado`;
+            currentStepTitle.textContent = `Paso 1 de 3: Significado (Palabra: ${currentWord.word})`;
             questionText.textContent = `¿Cuál es el significado de: **${currentWord.word}**?`;
 
             // Opciones incorrectas: otros 3 significados
@@ -488,12 +667,12 @@
             if (isCorrect) {
                 selectedButton.classList.add('correct');
                 feedbackOverall.textContent = '¡Significado Correcto! ✅ Ahora, escribe las formas verbales.';
-                // Avanzar a la siguiente fase
-                currentStep = 2; 
-                setTimeout(renderPrateritumPerfektQuestion, 1500); // Pequeña pausa
+                // Avanzar a la siguiente fase (Präteritum/Perfekt)
+                setTimeout(renderPrateritumPerfektQuestion, 1500);
             } else {
                 selectedButton.classList.add('incorrect');
-                feedbackOverall.textContent = 'Incorrecto. ❌ La respuesta correcta se marcó en verde. La palabra correcta era importante. Siguiente palabra...';
+                feedbackOverall.textContent = `Incorrecto. ❌ La palabra se repetirá en ${REPETITION_DELAY} rondas.`;
+                addWordToQueue(currentWord); // Agregar palabra fallada a la cola
                 nextButton.classList.remove('hidden');
             }
         }
@@ -515,12 +694,12 @@
             optionsContainer.classList.add('hidden');
             inputContainer.classList.remove('hidden');
             checkButton.classList.remove('hidden');
-            nextButton.classList.add('hidden'); // Ocultar hasta comprobar
+            nextButton.classList.add('hidden');
 
-            currentStepTitle.textContent = `Paso 2 y 3 de 3: Präteritum y Perfekt`;
+            currentStepTitle.textContent = `Paso 2 y 3 de 3: Präteritum y Perfekt (Palabra: ${currentWord.word})`;
             questionText.textContent = `Palabra: **${currentWord.word}** (${currentWord.meaning}). Escribe sus tiempos.`;
             
-            checkButton.removeEventListener('click', checkPrateritumPerfektAnswer); // Evitar duplicados
+            checkButton.removeEventListener('click', checkPrateritumPerfektAnswer);
             checkButton.addEventListener('click', checkPrateritumPerfektAnswer);
         }
 
@@ -533,6 +712,7 @@
             
             const correctPrateritum = normalizeInput(currentWord.prateritum);
             const correctPerfekt = normalizeInput(currentWord.perfekt);
+            let isPerfectlyCorrect = true; // Para verificar si se acierta todo
 
             // 2. Verificar Präteritum
             if (userPrateritum === correctPrateritum) {
@@ -544,6 +724,7 @@
                 prateritumFeedback.textContent = `❌ Incorrecto. La forma correcta es: ${currentWord.prateritum}`;
                 prateritumFeedback.classList.remove('feedback-correct');
                 prateritumFeedback.classList.add('feedback-incorrect');
+                isPerfectlyCorrect = false;
             }
 
             // 3. Verificar Perfekt
@@ -556,6 +737,7 @@
                 perfektFeedback.textContent = `❌ Incorrecto. La forma correcta es: ${currentWord.perfekt}`;
                 perfektFeedback.classList.remove('feedback-correct');
                 perfektFeedback.classList.add('feedback-incorrect');
+                isPerfectlyCorrect = false;
             }
 
             // 4. Deshabilitar y dar feedback general
@@ -564,22 +746,22 @@
             checkButton.classList.add('hidden');
             nextButton.classList.remove('hidden');
 
-            if (correctCount === 2) {
-                feedbackOverall.textContent = '¡Felicidades! Todas las formas son correctas. 🎉';
+            if (isPerfectlyCorrect) {
+                feedbackOverall.textContent = '¡Felicidades! La palabra ha sido completada con éxito. 🎉';
+                markWordAsLearned(currentWord); // Marcar como aprendida
             } else {
-                feedbackOverall.textContent = `Has acertado ${correctCount} de 2 formas verbales. ¡Repasa las incorrectas!`;
+                feedbackOverall.textContent = `Has acertado ${correctCount} de 2 formas. ¡Repetirás esta palabra en ${REPETITION_DELAY} rondas!`;
+                addWordToQueue(currentWord); // Agregar palabra fallada a la cola (reinicia el delay)
             }
         }
 
         // --- INICIAR JUEGO Y EVENTOS ---
         
         nextButton.addEventListener('click', startNewWord);
-
-        // Limpiar inputs al iniciar la fase de escritura (opcional, por usabilidad)
-        prateritumInput.addEventListener('focus', () => { if (prateritumInput.disabled) prateritumInput.value = ''; });
-        perfektInput.addEventListener('focus', () => { if (perfektInput.disabled) perfektInput.value = ''; });
-
+        checkButton.addEventListener('click', checkPrateritumPerfektAnswer);
+        
         // Iniciar el juego al cargar la página
+        updateLearnedWordsPanel(); 
         startNewWord();
     </script>
 </body>
